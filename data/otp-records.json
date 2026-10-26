@@ -1,0 +1,44 @@
+{
+  "host.sharma@royalpalms.org": {
+    "email": "host.sharma@royalpalms.org",
+    "hashedOtp": "0b33b88e0a85a513c139930b0cd0ace705a9eba937810ef864e9a009fe278813",
+    "createdAt": 1793038610739,
+    "expiresAt": 1793039210739,
+    "attempts": 3,
+    "resendAvailableAt": 1793038670739,
+    "verified": true,
+    "consumed": true,
+    "verificationToken": "8a82cb2a6ce7ce2577de7e50571dafade43cfeb636217c2e4f26be16e1c94494",
+    "tokenExpiresAt": 1793040455997
+  },
+  "iyengaratharv@gmail.com": {
+    "email": "iyengaratharv@gmail.com",
+    "hashedOtp": "11bb0dbc601934ec24d8d47abb1853a25c218f8b3e59be85f035ae6eeca12a3d",
+    "createdAt": 1793039292054,
+    "expiresAt": 1793039892054,
+    "attempts": 0,
+    "resendAvailableAt": 1793039352054,
+    "verified": false,
+    "consumed": false
+  },
+  "atharviyengar3@gmail.com": {
+    "email": "atharviyengar3@gmail.com",
+    "hashedOtp": "cd9128f71e8f354d93158e04b9e4377e97a94f173484bf1e6cabce4f532e5785",
+    "createdAt": 1793048226174,
+    "expiresAt": 1793048826174,
+    "attempts": 0,
+    "resendAvailableAt": 1793048286174,
+    "verified": false,
+    "consumed": false
+  },
+  "atharviyengar357@gmail.com": {
+    "email": "atharviyengar357@gmail.com",
+    "hashedOtp": "7c53c7a1d4689da239590a06165324406e9e4a6bb28bdca8754ea20d04ec6b09",
+    "createdAt": 1793048366839,
+    "expiresAt": 1793048966839,
+    "attempts": 1,
+    "resendAvailableAt": 1793048426839,
+    "verified": false,
+    "consumed": false
+  }
+}

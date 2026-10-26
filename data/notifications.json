@@ -1,0 +1,72 @@
+[
+  {
+    "type": "delivery",
+    "title": "Delivery Confirmed: Goregaon Banquet Test Handover",
+    "message": "90 meals accepted at Sneha Sadan Orphanage & Youth Home. FSSAI Temp: 68.5°C.",
+    "referenceId": "FR-TRK-9995",
+    "actionUrl": "/pickups/FR-TRK-9995",
+    "id": "notif-1793041908831",
+    "read": false,
+    "createdAt": "2026-10-26T19:11:48.831Z"
+  },
+  {
+    "type": "dispatch",
+    "title": "Driver Assigned: Vikram Malhotra",
+    "message": "Vikram Malhotra has been assigned to Goregaon Banquet Test Handover (MH 02 BZ 4491).",
+    "referenceId": "FR-TRK-9995",
+    "actionUrl": "/pickups/FR-TRK-9995",
+    "id": "notif-1793041908770",
+    "read": false,
+    "createdAt": "2026-10-26T19:11:48.770Z"
+  },
+  {
+    "type": "pickup",
+    "title": "Pickup Scheduled: Goregaon Banquet Test Handover",
+    "message": "Scheduled for 23:00 - 23:45 (90 meals). Ready for driver dispatch.",
+    "referenceId": "FR-TRK-9995",
+    "actionUrl": "/pickups/FR-TRK-9995",
+    "id": "notif-1793041908072",
+    "read": false,
+    "createdAt": "2026-10-26T19:11:48.072Z"
+  },
+  {
+    "id": "notif-1",
+    "type": "dispatch",
+    "title": "Van Dispatched for Bandra Sangeet",
+    "message": "Van MH 02 BZ 4491 is en route to Sea Breeze Banquet Hall (Carter Road). Lead driver: Vikram Malhotra.",
+    "referenceId": "FR-TRK-8821",
+    "actionUrl": "/pickups/FR-TRK-8821",
+    "read": false,
+    "createdAt": "2026-10-26T22:45:00.000Z"
+  },
+  {
+    "id": "notif-2",
+    "type": "pickup",
+    "title": "Pickup Confirmed: Sharma Royal Feast",
+    "message": "Pickup scheduled tonight at Royal Palms Ballroom #2 for 120 verified meals.",
+    "referenceId": "FR-TRK-7712",
+    "actionUrl": "/pickups/FR-TRK-7712",
+    "read": false,
+    "createdAt": "2026-10-26T21:30:00.000Z"
+  },
+  {
+    "id": "notif-3",
+    "type": "delivery",
+    "title": "Delivery Confirmed: Sneha Sadan Orphanage",
+    "message": "85 hot meals safely delivered to resident children at Sneha Sadan (Andheri East). Temperature: 67.4°C.",
+    "referenceId": "FR-TRK-6640",
+    "actionUrl": "/pickups/FR-TRK-6640",
+    "read": true,
+    "createdAt": "2026-10-25T23:48:10.000Z"
+  },
+  {
+    "id": "notif-4",
+    "type": "donation",
+    "title": "New Donation Registered: 120 Servings",
+    "message": "Sharma Royal Feast registered surplus food in Western Suburbs corridor.",
+    "referenceId": "FR-EVENT-NA5V2",
+    "actionUrl": "/pickups",
+    "read": true,
+    "createdAt": "2026-10-26T18:17:36.000Z"
+  }
+]
