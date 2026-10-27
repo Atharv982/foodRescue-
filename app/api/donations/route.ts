@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { eventDonationSchema } from '@/lib/validation';
 import { createEventDonation, getAllEventDonations, updateEventDonation } from '@/lib/storage';
-import { validateAndConsumeEmailToken } from '@/lib/email-otp';
 
 export async function GET() {
   try {
@@ -33,19 +32,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify email OTP token
-    const verificationToken = body.verificationToken;
-    const isVerified = validateAndConsumeEmailToken(parsed.data.email, verificationToken);
-
-    if (!isVerified) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Email verification required. Please enter your email and verify it with the 6-digit code before submitting.',
-        },
-        { status: 403 }
-      );
-    }
 
     const result = await createEventDonation({
       eventName: parsed.data.eventName,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Heart,
@@ -22,11 +22,6 @@ import {
   ArrowLeft,
   Check,
   RotateCcw,
-  ExternalLink,
-  ShieldAlert,
-  HelpCircle,
-  Lock,
-  Building2
 } from 'lucide-react';
 import CustomDropdown, { DropdownOption } from './CustomDropdown';
 
@@ -104,181 +99,12 @@ export default function FoodDonationRegistrationForm({
     vehicleNeeded: 'Medium Insulated Van (50–200 servings)',
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Email OTP State
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpInputs, setOtpInputs] = useState(['', '', '', '', '', '']);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpMessage, setOtpMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [cooldown, setCooldown] = useState(0);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
-  const [verificationToken, setVerificationToken] = useState<string | null>(null);
-  const [verifiedEmailAddress, setVerifiedEmailAddress] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
   // Final Submission State
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<{ success: boolean; donationId: string; message: string } | null>(null);
-
-  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  // Cooldown countdown timer
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const interval = setInterval(() => {
-      setCooldown((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [cooldown]);
-
-  // When email changes after verification, invalidate verification
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEmail = e.target.value;
-    setForm((prev) => ({ ...prev, email: newEmail }));
-    if (isEmailVerified && newEmail !== verifiedEmailAddress) {
-      setIsEmailVerified(false);
-      setVerificationToken(null);
-      setVerifiedEmailAddress(null);
-      setOtpSent(false);
-      setOtpInputs(['', '', '', '', '', '']);
-      setOtpMessage({
-        text: 'Email changed. Re-verification with a new code will be required.',
-        type: 'info',
-      });
-    }
-  };
-
-  // Trigger Send OTP
-  const handleSendOtp = async () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!form.email || !emailRegex.test(form.email)) {
-      setErrors((prev) => ({ ...prev, email: 'Please enter a valid email address to receive verification code' }));
-      return;
-    }
-
-    setErrors((prev) => {
-      const copy = { ...prev };
-      delete copy.email;
-      return copy;
-    });
-
-    setOtpLoading(true);
-    setOtpMessage(null);
-
-    try {
-      const res = await fetch('/api/otp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        setOtpMessage({ text: data.error || 'Failed to send verification code.', type: 'error' });
-        if (data.cooldownSeconds) setCooldown(data.cooldownSeconds);
-      } else {
-        setOtpSent(true);
-        setCooldown(data.cooldownSeconds || 60);
-        setOtpMessage({
-          text: `Verification code sent to ${form.email}. Please check your inbox or spam folder.`,
-          type: 'success',
-        });
-        // Focus first OTP input
-        setTimeout(() => {
-          otpInputRefs.current[0]?.focus();
-        }, 150);
-      }
-    } catch (err) {
-      setOtpMessage({ text: 'Network error while sending verification code. Please try again.', type: 'error' });
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  // Handle individual OTP digit change
-  const handleOtpDigitChange = (index: number, value: string) => {
-    // Only accept numeric digit
-    const cleaned = value.replace(/\D/g, '');
-    const newInputs = [...otpInputs];
-
-    if (cleaned.length > 1) {
-      // User pasted multiple characters
-      const pastedDigits = cleaned.slice(0, 6).split('');
-      pastedDigits.forEach((d, i) => {
-        if (index + i < 6) {
-          newInputs[index + i] = d;
-        }
-      });
-      setOtpInputs(newInputs);
-      const nextFocus = Math.min(5, index + pastedDigits.length);
-      otpInputRefs.current[nextFocus]?.focus();
-      return;
-    }
-
-    newInputs[index] = cleaned;
-    setOtpInputs(newInputs);
-
-    // Auto-advance
-    if (cleaned && index < 5) {
-      otpInputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  // Handle backspace navigation in OTP
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otpInputs[index] && index > 0) {
-      otpInputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  // Handle paste in OTP
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (!pasted) return;
-    const newInputs = ['', '', '', '', '', ''];
-    pasted.split('').forEach((digit, i) => {
-      newInputs[i] = digit;
-    });
-    setOtpInputs(newInputs);
-    const nextIdx = Math.min(5, pasted.length - 1);
-    otpInputRefs.current[nextIdx]?.focus();
-  };
-
-  // Verify submitted OTP
-  const handleVerifyOtp = async () => {
-    const fullCode = otpInputs.join('');
-    if (fullCode.length !== 6) {
-      setOtpMessage({ text: 'Please enter all 6 digits of the verification code.', type: 'error' });
-      return;
-    }
-
-    setOtpLoading(true);
-    setOtpMessage(null);
-
-    try {
-      const res = await fetch('/api/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email, code: fullCode }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        setOtpMessage({ text: data.error || 'Verification failed. Please check the code and try again.', type: 'error' });
-      } else {
-        setIsEmailVerified(true);
-        setVerificationToken(data.verificationToken);
-        setVerifiedEmailAddress(form.email);
-        setOtpMessage({ text: 'Email verified successfully! You may now proceed.', type: 'success' });
-      }
-    } catch (err) {
-      setOtpMessage({ text: 'Network error during verification. Please try again.', type: 'error' });
-    } finally {
-      setOtpLoading(false);
-    }
-  };
 
   // Validate individual steps before advancing
   const validateStep = (stepNumber: number): boolean => {
@@ -301,8 +127,6 @@ export default function FoodDonationRegistrationForm({
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!form.email || !emailRegex.test(form.email)) {
         newErrors.email = 'Please enter a valid email address';
-      } else if (!isEmailVerified) {
-        newErrors.email = 'Please verify your email address using the 6-digit OTP code before proceeding';
       }
     }
 
@@ -340,13 +164,6 @@ export default function FoodDonationRegistrationForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Final checks
-    if (!isEmailVerified || !verificationToken) {
-      setSubmitError('Email verification is required before submitting. Please complete Step 2 verification.');
-      setCurrentStep(2);
-      return;
-    }
-
     setSubmitting(true);
     setSubmitError(null);
 
@@ -354,10 +171,7 @@ export default function FoodDonationRegistrationForm({
       const res = await fetch('/api/donations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          verificationToken,
-        }),
+        body: JSON.stringify(form),
       });
 
       const data = await res.json();
@@ -387,11 +201,6 @@ export default function FoodDonationRegistrationForm({
     setCurrentStep(1);
     setResult(null);
     setSubmitError(null);
-    setIsEmailVerified(false);
-    setVerificationToken(null);
-    setVerifiedEmailAddress(null);
-    setOtpSent(false);
-    setOtpInputs(['', '', '', '', '', '']);
     setForm({
       eventName: '',
       eventType: 'Wedding',
@@ -446,9 +255,9 @@ export default function FoodDonationRegistrationForm({
               <span className="font-mono text-base font-black text-moss">{result.donationId}</span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold text-ink/40 block">Verified Donor Email</span>
+              <span className="text-[10px] uppercase font-bold text-ink/40 block">Donor Email</span>
               <span className="font-bold text-ink flex items-center gap-1 justify-end">
-                <Check size={13} className="text-moss" /> {verifiedEmailAddress || form.email}
+                <Check size={13} className="text-moss" /> {form.email}
               </span>
             </div>
           </div>
@@ -552,7 +361,7 @@ export default function FoodDonationRegistrationForm({
           <span className="text-moss">
             Step {currentStep} of 5:{' '}
             {currentStep === 1 && 'Event Details'}
-            {currentStep === 2 && 'Contact & Email Verification'}
+            {currentStep === 2 && 'Contact Information'}
             {currentStep === 3 && 'Food & Servings'}
             {currentStep === 4 && 'Pickup & Packaging'}
             {currentStep === 5 && 'Review & Final Confirmation'}
@@ -662,12 +471,12 @@ export default function FoodDonationRegistrationForm({
         )}
 
         {/* ============================================================== */}
-        {/* STEP 2: CONTACT & GMAIL EMAIL OTP VERIFICATION */}
+        {/* STEP 2: CONTACT INFORMATION */}
         {/* ============================================================== */}
         {currentStep === 2 && (
           <div className="space-y-5 animate-in fade-in duration-200">
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-moss">
-              <User size={14} /> Step 2: Contact Information & Email Verification
+              <User size={14} /> Step 2: Contact Information
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -681,7 +490,10 @@ export default function FoodDonationRegistrationForm({
                     type="text"
                     placeholder="e.g. Sunil Sharma / Chef Vikram"
                     value={form.contactPerson}
-                    onChange={(e) => setForm({ ...form, contactPerson: e.target.value })}
+                    onChange={(e) => {
+                      setForm({ ...form, contactPerson: e.target.value });
+                      if (errors.contactPerson) setErrors((prev) => ({ ...prev, contactPerson: undefined }));
+                    }}
                     className="w-full rounded-2xl border border-ink/15 bg-cream/30 pl-9 pr-3.5 py-3.5 text-xs font-semibold text-ink placeholder:text-ink/40 outline-hidden transition focus:border-moss focus:bg-white focus:ring-2 focus:ring-moss/20"
                   />
                 </div>
@@ -699,7 +511,10 @@ export default function FoodDonationRegistrationForm({
                     placeholder="e.g. 9820123456"
                     maxLength={10}
                     value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    onChange={(e) => {
+                      setForm({ ...form, phone: e.target.value });
+                      if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+                    }}
                     className="w-full rounded-2xl border border-ink/15 bg-cream/30 pl-9 pr-3.5 py-3.5 text-xs font-semibold text-ink placeholder:text-ink/40 outline-hidden transition focus:border-moss focus:bg-white focus:ring-2 focus:ring-moss/20"
                   />
                 </div>
@@ -708,158 +523,34 @@ export default function FoodDonationRegistrationForm({
               </div>
             </div>
 
-            {/* Email OTP Verification Panel */}
-            <div className="rounded-3xl border border-ink/10 bg-cream/30 p-5 sm:p-6 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h4 className="font-display text-sm sm:text-base font-bold text-ink flex items-center gap-2">
-                    <Mail size={16} className="text-moss" /> Email for Verification & Certificate <span className="text-tomato">*</span>
-                  </h4>
-                  <p className="text-xs text-ink/65 mt-0.5">
-                    We send a secure one-time code to confirm your email and deliver your Tax 80G Food Relief Certificate.
-                  </p>
-                </div>
-
-                {isEmailVerified && (
-                  <span className="rounded-full bg-sage/60 px-3 py-1 text-xs font-black text-moss flex items-center gap-1 shrink-0">
-                    <Check size={13} /> Verified
-                  </span>
-                )}
+            <div>
+              <label className="block text-xs font-bold text-ink mb-1.5">
+                Email Address (for Dispatch Updates & 80G Tax Exemption Certificate) <span className="text-tomato">*</span>
+              </label>
+              <div className="relative">
+                <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40" />
+                <input
+                  type="email"
+                  placeholder="e.g. contact@sharmaweddings.com or name@gmail.com"
+                  value={form.email}
+                  onChange={(e) => {
+                    setForm({ ...form, email: e.target.value });
+                    if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                  }}
+                  className="w-full rounded-2xl border border-ink/15 bg-cream/30 pl-9 pr-3.5 py-3.5 text-xs font-semibold text-ink placeholder:text-ink/40 outline-hidden transition focus:border-moss focus:bg-white focus:ring-2 focus:ring-moss/20"
+                />
               </div>
+              <span className="text-[10px] text-ink/50 mt-1 block">
+                We'll email you the pickup confirmation, assigned vehicle details, and your official 80G tax receipt.
+              </span>
+              {errors.email && <p className="mt-1 text-[11px] font-bold text-tomato">{errors.email}</p>}
+            </div>
 
-              <div className="flex flex-col sm:flex-row gap-2.5">
-                <div className="relative flex-1">
-                  <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40" />
-                  <input
-                    type="email"
-                    placeholder="Enter your exact email address (e.g. name@gmail.com)"
-                    value={form.email}
-                    onChange={handleEmailChange}
-                    disabled={isEmailVerified}
-                    className={`w-full rounded-2xl border bg-white pl-9 pr-3.5 py-3.5 text-xs font-semibold text-ink placeholder:text-ink/40 outline-hidden transition focus:border-moss focus:ring-2 focus:ring-moss/20 ${
-                      isEmailVerified
-                        ? 'border-moss bg-moss/5 text-moss font-bold cursor-not-allowed'
-                        : 'border-ink/15'
-                    }`}
-                  />
-                </div>
-
-                {!isEmailVerified && (
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={otpLoading || cooldown > 0}
-                    className="rounded-2xl bg-moss px-5 py-3.5 text-xs font-bold text-white transition hover:bg-[#224433] disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    {otpLoading ? (
-                      <span className="flex items-center gap-1">
-                        <RotateCcw size={13} className="animate-spin" /> Sending Code...
-                      </span>
-                    ) : cooldown > 0 ? (
-                      `Resend in ${cooldown}s`
-                    ) : otpSent ? (
-                      'Resend Code'
-                    ) : (
-                      'Send Verification Code'
-                    )}
-                  </button>
-                )}
-
-                {isEmailVerified && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsEmailVerified(false);
-                      setVerificationToken(null);
-                      setVerifiedEmailAddress(null);
-                      setOtpSent(false);
-                      setOtpInputs(['', '', '', '', '', '']);
-                      setOtpMessage({ text: 'Please enter a new email and verify it.', type: 'info' });
-                    }}
-                    className="rounded-2xl border border-ink/15 bg-white px-4 py-3.5 text-xs font-bold text-ink hover:bg-cream transition shrink-0 cursor-pointer"
-                  >
-                    Change Email
-                  </button>
-                )}
-              </div>
-
-              {errors.email && <p className="text-[11px] font-bold text-tomato">{errors.email}</p>}
-
-              {otpMessage && (
-                <div
-                  className={`rounded-xl p-3 text-xs font-bold flex items-start gap-2 ${
-                    otpMessage.type === 'success'
-                      ? 'bg-sage/40 text-moss'
-                      : otpMessage.type === 'error'
-                      ? 'bg-tomato/15 text-tomato'
-                      : 'bg-cream text-ink/75'
-                  }`}
-                >
-                  {otpMessage.type === 'success' ? (
-                    <CheckCircle2 size={15} className="shrink-0 mt-0.5" />
-                  ) : otpMessage.type === 'error' ? (
-                    <AlertCircle size={15} className="shrink-0 mt-0.5" />
-                  ) : (
-                    <HelpCircle size={15} className="shrink-0 mt-0.5" />
-                  )}
-                  <span>{otpMessage.text}</span>
-                </div>
-              )}
-
-              {/* Dedicated 6-Digit OTP Input Box (Shown when OTP has been sent and not yet verified) */}
-              {otpSent && !isEmailVerified && (
-                <div className="rounded-2xl border border-moss/20 bg-white p-5 space-y-3.5 animate-in fade-in duration-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                    <span className="font-bold text-ink flex items-center gap-1.5">
-                      <Lock size={14} className="text-moss" /> Enter 6-Digit Verification Code
-                    </span>
-                    <span className="text-[11px] text-ink/50">
-                      Code expires in <strong>10 minutes</strong>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-2 sm:gap-3 py-1" onPaste={handleOtpPaste}>
-                    {otpInputs.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => {
-                          otpInputRefs.current[idx] = el;
-                        }}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                        className={`h-12 w-11 sm:h-14 sm:w-13 rounded-2xl border text-center font-mono text-xl sm:text-2xl font-black text-ink outline-hidden transition focus:border-moss focus:ring-2 focus:ring-moss/20 ${
-                          digit ? 'border-moss bg-moss/5 text-moss' : 'border-ink/20 bg-cream/20'
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={cooldown > 0 || otpLoading}
-                      className="text-xs font-bold text-moss hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer"
-                    >
-                      {cooldown > 0 ? `Didn't get code? Resend in ${cooldown}s` : 'Resend Verification Code'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      disabled={otpLoading || otpInputs.join('').length !== 6}
-                      className="w-full sm:w-auto rounded-xl bg-moss px-6 py-2.5 text-xs font-bold text-white transition hover:bg-[#224433] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1"
-                    >
-                      {otpLoading ? <RotateCcw size={13} className="animate-spin" /> : <Check size={13} />}
-                      Verify Email
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div className="rounded-2xl border border-ink/10 bg-cream/30 p-4 text-xs text-ink/70 flex items-center gap-3">
+              <ShieldCheck size={18} className="text-moss shrink-0" />
+              <span>
+                <strong>Direct Driver Dispatch:</strong> Contact information is securely kept private and only shared with the assigned pickup van driver 30 minutes before arrival.
+              </span>
             </div>
           </div>
         )}
@@ -1014,7 +705,7 @@ export default function FoodDonationRegistrationForm({
               <div className="flex items-center justify-between border-b border-ink/10 pb-3">
                 <span className="font-display text-base font-bold text-ink">Review Registration Summary</span>
                 <span className="rounded-full bg-sage/60 px-3 py-0.5 text-[10px] font-black text-moss flex items-center gap-1">
-                  <Check size={12} /> Email Verified
+                  <Check size={12} /> Contact Details Ready
                 </span>
               </div>
 
@@ -1076,7 +767,7 @@ export default function FoodDonationRegistrationForm({
           ) : (
             <button
               type="submit"
-              disabled={submitting || !isEmailVerified}
+              disabled={submitting}
               className="rounded-2xl bg-moss px-8 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-md hover:bg-[#224433] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer ml-auto"
             >
               {submitting ? (

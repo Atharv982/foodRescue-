@@ -202,7 +202,7 @@ export default function HeroSection({ featuredBox, onReserve, onOpen, onQuickFil
 
           {/* Headline with Evergreen & Forest Typography */}
           <h1 className="mt-6 font-display text-5xl font-black leading-[1.03] tracking-[-0.04em] text-evergreen sm:text-6xl lg:text-7xl">
-            Don’t let celebration food <span className="text-forest underline decoration-coral/40 decoration-wavy decoration-2">go to waste.</span><br />
+            Don’t let celebration food <span className="text-forest">go to waste.</span><br />
             Feed those in need.
           </h1>
 
